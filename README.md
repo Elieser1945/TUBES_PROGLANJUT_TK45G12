@@ -9,3 +9,5 @@ Anggota Kelompok
 
 Output:
 ![grafik makanan](https://github.com/user-attachments/assets/15cc1e70-0bce-448c-b62b-c795c6ba7298)
+![grafik minuman](https://github.com/user-attachments/assets/12e7dd41-6bae-4b85-b62b-7aec24c11cd0)
+
