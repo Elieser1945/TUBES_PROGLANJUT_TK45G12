@@ -1,0 +1,41 @@
+import pandas as pd
+
+def display_top_sales(df):
+    df['Tanggal transaksi'] = pd.to_datetime(df['Tanggal transaksi'])
+    df['Week'] = df['Tanggal transaksi'].dt.isocalendar().week
+
+    while True:
+        print("\nMenu Pilihan Tampilkan:")
+        print("1. Makanan")
+        print("2. Minuman")
+        print("3. Keluar")
+
+        choice = input("Pilih opsi: ")
+
+        if choice == '1':
+            jenis = 'Makanan'
+        elif choice == '2':
+            jenis = 'Minuman'
+        elif choice == '3':
+            print("Keluar dari program.")
+            break
+        else:
+            print("Input tidak valid. Silakan pilih 1, 2, atau 3.")
+            continue
+
+        all_weekly_sales = []
+        filtered_df = df[df["Jenis"] == jenis]
+
+        for week in range(1, 5):
+            weekly_sales = filtered_df[filtered_df["Week"] == week].groupby("Detail")["Jumlah transaksi"].sum().reset_index()
+            weekly_sales = weekly_sales.sort_values(by="Jumlah transaksi", ascending=False).head(3)
+
+            weekly_sales['Week'] = week
+            all_weekly_sales.append(weekly_sales)
+
+        final_df = pd.concat(all_weekly_sales, ignore_index=True)
+        final_df = final_df.rename(columns={'Week': 'Minggu'})
+
+        display(final_df)
+
+display_top_sales(df)
