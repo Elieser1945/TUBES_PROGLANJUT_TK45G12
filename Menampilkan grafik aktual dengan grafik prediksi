@@ -1,0 +1,61 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+import warnings
+warnings.filterwarnings('ignore')
+
+df = pd.read_excel('/content/drive/MyDrive/dataset/Dataset tubes.xlsx')
+
+df['Tanggal transaksi'] = pd.to_datetime(df['Tanggal transaksi'])
+makanan_df = df[df['Jenis'] == 'Makanan']
+minuman_df = df[df['Jenis'] == 'Minuman']
+
+makanan_counts = makanan_df.groupby('Tanggal transaksi')['Jumlah transaksi'].sum().reset_index()
+minuman_counts = minuman_df.groupby('Tanggal transaksi')['Jumlah transaksi'].sum().reset_index()
+
+def predict_sales(item_type, weeks_ahead=4):
+    sales_data = df[df['Jenis'] == item_type].groupby('Tanggal transaksi')['Jumlah transaksi'].sum().reset_index()
+    sales_data['Days'] = (sales_data['Tanggal transaksi'] - sales_data['Tanggal transaksi'].min()).dt.days
+    X = sales_data[['Days']]
+    y = sales_data['Jumlah transaksi']
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    future_days = np.array(range(sales_data['Days'].max() + 1, sales_data['Days'].max() + 1 + (7 * weeks_ahead))).reshape(-1, 1)
+    future_dates = pd.date_range(start=sales_data['Tanggal transaksi'].max() + pd.Timedelta(days=1), periods=weeks_ahead * 7, freq='D')
+    predicted_sales = model.predict(future_days)
+
+    return future_dates, predicted_sales
+
+save_choice = input("Apakah Anda ingin menyimpan grafik? (ya/tidak): ").strip().lower()
+
+plt.figure(figsize=(14, 8))
+plt.plot(makanan_counts['Tanggal transaksi'], makanan_counts['Jumlah transaksi'], label='History Makanan', marker='o', color='blue')
+plt.plot(minuman_counts['Tanggal transaksi'], minuman_counts['Jumlah transaksi'], label='History Minuman', marker='x', color='red')
+
+future_dates_makanan, predicted_sales_makanan = predict_sales('Makanan')
+future_dates_minuman, predicted_sales_minuman = predict_sales('Minuman')
+
+plt.plot(future_dates_makanan, predicted_sales_makanan, label='Prediksi Makanan', linestyle='--', marker='o', color='cyan')
+plt.plot(future_dates_minuman, predicted_sales_minuman, label='Prediksi Minuman', linestyle='--', marker='x', color='orange')
+
+plt.xlabel('Tanggal')
+plt.ylabel('Jumlah Transaksi')
+plt.title('Grafik History dan Prediksi Penjualan Makanan & Minuman')
+plt.xticks(rotation=45, ha='right')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+
+if save_choice == 'ya':
+    save_path = '/content/drive/MyDrive/dataset/grafik_penjualan_prediksi.png'
+    plt.savefig(save_path)
+    print(f"Grafik telah disimpan di {save_path}")
+elif save_choice == 'tidak':
+    print("Grafik tidak disimpan.")
+else:
+    print("Input tidak valid. Grafik akan tetap ditampilkan tanpa disimpan.")
+
+plt.show()
