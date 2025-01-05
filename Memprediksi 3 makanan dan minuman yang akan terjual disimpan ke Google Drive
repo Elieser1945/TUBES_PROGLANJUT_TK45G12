@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from IPython.display import display
+import warnings
+warnings.filterwarnings('ignore')
+
+df = pd.read_excel('/content/drive/MyDrive/dataset/Dataset tubes.xlsx')
+
+df['Tanggal transaksi'] = pd.to_datetime(df['Tanggal transaksi'])
+sales_data = df.groupby(['Detail', 'Jenis', 'Tanggal transaksi'])['Jumlah transaksi'].sum().reset_index()
+
+def predict_sales_weekly(item_type, num_predictions=3, weeks_ahead=4):
+    """Predicts top selling items per week using linear regression."""
+
+    all_weekly_predictions = []
+
+    for week in range(1, weeks_ahead + 1):
+        predictions = []
+        for detail in sales_data[sales_data.Jenis == item_type]['Detail'].unique():
+            item_df = sales_data[(sales_data.Detail == detail) & (sales_data.Jenis == item_type)].copy()
+            item_df['Days'] = (item_df['Tanggal transaksi'] - item_df['Tanggal transaksi'].min()).dt.days
+            X = item_df[['Days']]
+            y = item_df['Jumlah transaksi']
+
+            model = LinearRegression()
+            model.fit(X, y)
+
+            future_days = np.array(range(item_df['Days'].max() + 1 + (week - 1) * 7,
+                                          item_df['Days'].max() + 1 + week * 7)).reshape(-1, 1)
+            predicted_sales = model.predict(future_days)
+            predictions.append([detail, predicted_sales.mean(), week])
+
+        predictions.sort(key=lambda x: x[1], reverse=True)
+        all_weekly_predictions.extend(predictions[:num_predictions])
+
+    predictions_df = pd.DataFrame(all_weekly_predictions, columns=['Item', 'Predicted Sales', 'Week'])
+
+    final_table = predictions_df.pivot(index='Item', columns='Week', values='Predicted Sales')
+    final_table.fillna(0, inplace=True)
+    return final_table
+
+while True:
+    choice = input("Pilih menu : \n1. Makanan\n2. Minuman\n3. Keluar\nMasukkan pilihan anda: ")
+
+    if choice == '1':
+        final_table = predict_sales_weekly('Makanan')
+        display(final_table)
+        save_choice = input("Apakah Anda ingin menyimpan tabel ke Google Drive? (y/n): ")
+        if save_choice.lower() == 'y':
+            final_table.to_excel('/content/drive/MyDrive/dataset/Prediksi_Makanan.xlsx')
+            print("Tabel berhasil disimpan sebagai 'Prediksi_Makanan.xlsx' di Google Drive.")
+    elif choice == '2':
+        final_table = predict_sales_weekly('Minuman')
+        display(final_table)
+        save_choice = input("Apakah Anda ingin menyimpan tabel ke Google Drive? (y/n): ")
+        if save_choice.lower() == 'y':
+            final_table.to_excel('/content/drive/MyDrive/dataset/Prediksi_Minuman.xlsx')
+            print("Tabel berhasil disimpan sebagai 'Prediksi_Minuman.xlsx' di Google Drive.")
+    elif choice == '3':
+        break
+    else:
+        print("Pilihan tidak valid")
