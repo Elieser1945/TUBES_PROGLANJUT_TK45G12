@@ -1,0 +1,39 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+from google.colab import drive
+
+drive.mount('/content/drive')
+
+df = pd.read_excel('/content/drive/MyDrive/dataset/Dataset tubes.xlsx')
+
+df['Tanggal transaksi'] = pd.to_datetime(df['Tanggal transaksi'])
+
+makanan_df = df[df['Jenis'] == 'Makanan']
+minuman_df = df[df['Jenis'] == 'Minuman']
+
+makanan_counts = makanan_df.groupby('Tanggal transaksi')['Jumlah transaksi'].sum().reset_index()
+minuman_counts = minuman_df.groupby('Tanggal transaksi')['Jumlah transaksi'].sum().reset_index()
+
+plt.figure(figsize=(10, 6))
+plt.plot(makanan_counts['Tanggal transaksi'], makanan_counts['Jumlah transaksi'],
+         label='Makanan', marker='o', color='blue')
+plt.xlabel('Tanggal Transaksi')
+plt.ylabel('Jumlah Transaksi')
+plt.title('Jumlah Transaksi Makanan vs Tanggal')
+plt.xticks(rotation=45, ha='right')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(minuman_counts['Tanggal transaksi'], minuman_counts['Jumlah transaksi'],
+         label='Minuman', marker='x', color='red')
+plt.xlabel('Tanggal Transaksi')
+plt.ylabel('Jumlah Transaksi')
+plt.title('Jumlah Transaksi Minuman vs Tanggal')
+plt.xticks(rotation=45, ha='right')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
